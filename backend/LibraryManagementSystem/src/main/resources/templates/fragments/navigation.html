@@ -1,0 +1,44 @@
+<th:block th:fragment="navigation" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+    <nav class="navbar">
+        <div class="navbar-left">
+            <i class="bi bi-book"></i>
+            <a class="navbar-logo" th:href="@{'/'}" >Library Management System</a>
+        </div>
+
+        <div class="navbar-right">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{'/'}">Home</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasAnyAuthority('ADMIN', 'LIBRARIAN')">
+                    <a class="nav-link" th:href="@{'/loans'}">Loans</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasAuthority('MEMBER')">
+                    <a class="nav-link" th:href="@{'/loans/myLoans'}">My Loans</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{'/books'}">Books</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasAnyAuthority('ADMIN', 'LIBRARIAN')">
+                    <a class="nav-link" th:href="@{'/bookInfos'}">Books Information</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasAnyAuthority('ADMIN', 'LIBRARIAN')">
+                    <a class="nav-link" th:href="@{'/authors'}">Authors</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasAnyAuthority('ADMIN', 'LIBRARIAN')">
+                    <a class="nav-link" th:href="@{'/categories'}">Categories</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasAnyAuthority('ADMIN', 'LIBRARIAN')">
+                    <a class="nav-link" th:href="@{'/users'}">Users</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasAuthority('MEMBER')">
+                    <a class="nav-link" th:href="@{'/users/myDetails'}">My Details</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/logout}">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</th:block>

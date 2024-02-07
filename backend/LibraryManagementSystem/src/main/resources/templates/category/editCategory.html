@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Category</title>
+    <th:block th:insert="~{fragments/head :: head}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/forms.css}">
+</head>
+<style>
+    .edit-category-container {
+        padding: 4rem var(--padding-container);
+    }
+
+    .edit-category-container h1 {
+        font-size: 2.8rem;
+        margin-bottom: 2rem;
+    }
+
+    .edit-category-form {
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+</style>
+<body>
+<th:block th:insert="~{fragments/navigation :: navigation}"></th:block>
+
+<div class="edit-category-container">
+    <h1>Edit Category</h1>
+
+    <form class="edit-category-form" method="POST" th:action="@{/categories/updateCategory}">
+        <input name="id" th:value="${category.id}" type="hidden">
+        <div class="input-group">
+            <label>Category Name</label>
+            <input class="form-control" name="name" required type="text" th:value="${category.name}" placeholder="Enter category name *">
+        </div>
+        <button class="form-submit submit" type="submit" onclick="initLoadingSpinner()">Edit Category</button>
+    </form>
+    <a class="back-btn" th:href="@{'/categories'}" >Back</a>
+</div>
+</body>
+<script>
+    const initLoadingSpinner = () => {
+        const name = document.querySelector('input[name="name"]').value;
+
+        const submitBtn = document.querySelector('.submit');
+
+        if(name === '') {
+            alert('Please fill in all the fields');
+        } else {
+            submitBtn.innerHTML = '<div class="loader"></div>';
+        }
+    }
+</script>
+</html>

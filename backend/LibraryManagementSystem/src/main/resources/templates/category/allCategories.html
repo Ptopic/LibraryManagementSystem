@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>All Categories</title>
+    <th:block th:insert="~{fragments/head :: head}"></th:block>
+</head>
+<style>
+    .container-categories {
+        padding: 4rem 12rem;
+    }
+
+    .container-categories h1 {
+        font-size: 2.8rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .categories-stats-filters {
+        display: flex;
+    }
+
+    .total-categories {
+        background-color: var(--bg700);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: .8rem 1.2rem;
+        border-radius: .4rem;
+        border: 1px solid var(--primary500);
+        margin-right: 2rem;
+    }
+
+    @media (max-width: 1400px) {
+        .container-categories {
+            padding: 4rem 4rem;
+        }
+    }
+</style>
+<body>
+    <th:block th:insert="~{fragments/navigation :: navigation}"></th:block>
+    <div class="container-categories">
+        <h1>Categories</h1>
+
+        <div class="categories-stats-filters">
+            <div class="total-categories">
+                <div class="total-icon">
+                    <i class="bi bi-file-earmark"></i>
+                </div>
+                <div class="total-info">
+                    Total categories:
+                    <span th:text="${count}">4</span>
+                </div>
+            </div>
+            <form class="filters">
+                <div class="search-input">
+                    <input class="search-input" name="searchQuery" id="searchQuery" placeholder="Search categories" th:value="${searchQuery}" type="search">
+                    <button><i class="bi bi-search"></i></button>
+                </div>
+
+                <div class="filter-container">
+                    <label for="pageSize">Items per page</label>
+                    <select class="form-select" id="pageSize" name="size"
+                            onchange="changeFilters()" th:value="${pageSize}"
+                    >
+                        <option th:selected="${5 == pageSize}" th:text="5" th:value="5"></option>
+                        <option th:selected="${7 == pageSize}" th:text="7" th:value="7"></option>
+                        <option th:selected="${10 == pageSize}" th:text="10" th:value="10"></option>
+                    </select>
+                </div>
+
+                <button class="btn-clear">
+                    Clear filters
+                </button>
+            </form>
+        </div>
+
+        <div class="action-buttons">
+            <a class="btn-add" sec:authorize="hasAnyAuthority('ADMIN', 'LIBRARIAN')" th:href="@{/categories/add}">Add new Category</a>
+        </div>
+
+        <div class="error" th:text="${message}" th:if="${message != null}"></div>
+
+        <div class="table-container">
+            <div class="none-found" th:if="${categories.size() == 0}"><p>No categories found.</p></div>
+            <table class="table" th:if="${categories.size() > 0}">
+                <thead class="table-head">
+                    <tr>
+                        <th class="id-header"># Id</th>
+                        <th>
+                            <a th:href="@{'/categories?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'name' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'name' ? reverseSortDirection : sortDirection) : ''}}">
+                                Name
+                                <i class="bi bi-sort-up" th:if="${(sortField == 'name' && sortDirection == 'asc') || sortField != 'name'}"></i>
+                                <i class="bi bi-sort-down" th:if="${sortField == 'name' && sortDirection == 'desc'}"></i>
+                            </a>
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody class="table-content">
+                    <tr th:each="category : ${categories}" class="table-content-row">
+                        <th th:text="${category.id.toString().substring(0,8)+'...'}" class="id"></th>
+                        <td th:text="${category.name}"></td>
+                        <td class="actions-row">
+                            <div>
+                                <a class="action-btn" th:href="@{/categories/edit/{categoryId}(categoryId=${category.id})}"
+                                   title="Edit Category">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                            <div>
+                                <a class="delete-btn"
+                                   role="button"
+                                   th:href="@{/categories/delete/{categoryId}(categoryId=${category.id})}"
+                                   sec:authorize="hasAnyAuthority('ADMIN')"
+                                   th:categoryName="${category.name}"
+                                   title="Delete Category"
+                                >
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="pagination-container">
+            <a th:if="${currentPage > 1}" th:href="@{'/categories?' + 'page=' + ${currentPage - 1} + '&size=' + ${pageSize}
+                 + ${sortField != null ? '&sortField=' + sortField : ''} + ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + sortDirection : ''}}" class="previous-btn">Previous</a>
+            <p class="current-page" th:text="${currentPage}"></p>
+            <a th:if="${currentPage < totalPages}" th:href="@{'/categories?' + 'page=' + ${currentPage + 1} + '&size=' + ${pageSize}
+                 + ${sortField != null ? '&sortField=' + sortField : ''} + ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + sortDirection : ''}}" class="next-btn">Next</a>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="deleteModal">
+        <div class="delete-modal">
+            <div class="modal-header">
+                <h1>Confirm Delete</h1>
+            </div>
+            <div class="modal-body">
+                <p><span id="confirmText"></span></p>
+            </div>
+            <div class="modal-footer">
+                <a class="yes-btn submit" id="yesBtn" type="button" onclick="initLoadingSpinner()">Delete Category</a>
+                <button class="no-btn noBtn" data-bs-dismiss="modal" type="button">Close</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script type="text/javascript">
+    const deleteButtons = document.querySelectorAll(".delete-btn");
+    const deleteModal = document.querySelector(".modal-overlay")
+
+    const noBtn = document.querySelector(".no-btn");
+    deleteButtons.forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            let href = btn.getAttribute("href");
+            let categoryName = btn.getAttribute("categoryName");
+
+            const confirmText = document.querySelector("#confirmText");
+            confirmText.innerHTML = "Are you sure you want to delete category: \<b\>" + categoryName + "\<\/b\>?";
+
+            const yesBtn = document.querySelector(".yes-btn");
+            yesBtn.href = href;
+
+            deleteModal.style.display = "flex";
+        })
+    })
+
+    noBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        deleteModal.style.display = "none";
+    })
+
+    const initLoadingSpinner = () => {
+        const submitBtn = document.querySelector('.submit');
+        submitBtn.innerHTML = '<div class="loader"></div>';
+    }
+
+    const changeFilters = () => {
+        const form = document.querySelector(".filters");
+        form.submit();
+    }
+
+    const bntClear = document.querySelector(".btn-clear");
+    bntClear.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.location = "[[@{/categories}]]";
+    })
+
+    const searchInput = document.querySelector(".search-input");
+    searchInput.addEventListener("search", () => {
+        // Clear all filters when search is cleared
+        const searchQuery = document.querySelector("#searchQuery");
+        searchQuery.value = "";
+        changeFilters();
+    })
+</script>
+</html>

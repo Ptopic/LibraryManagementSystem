@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>User details</title>
+    <th:block th:insert="~{fragments/head :: head}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/userDetails.css}">
+</head>
+<body>
+    <th:block th:insert="~{fragments/navigation :: navigation}"></th:block>
+    <div class="details-container">
+        <h1>User Details:</h1>
+        <div class="details-card">
+            <div class="details-card-header">
+                <h4 class="title" th:text="${'#' + user.id}"></h4>
+                <h3 class="title" th:text="${user.firstName + ' ' + user.lastName}"></h3>
+                <p class="subtitle" th:text="${user.email}"></p>
+            </div>
+            <div class="details-card-content">
+                <div>
+                    <strong>ID:</strong>
+                    <span th:text="${user.id}"></span>
+                </div>
+
+                <div>
+                    <strong>First Name:</strong>
+                    <span th:text="${user.firstName}"></span>
+                </div>
+
+                <div>
+                    <strong>Last Name:</strong>
+                    <span th:text="${user.lastName}"></span>
+                </div>
+
+                <div>
+                    <strong>Email:</strong>
+                    <span th:text="${user.email}"></span>
+                </div>
+
+                <div>
+                    <strong>Date Of Birth:</strong>
+                    <span th:text="${dateOfBirth}"></span>
+                </div>
+
+                <div>
+                    <strong>Contact Number:</strong>
+                    <span th:text="${user.contactNumber}"></span>
+                </div>
+
+                <div>
+                    <strong>Roles:</strong>
+                    <span th:each="role : ${user.roles}" th:text="${role.name}"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="links-container">
+            <a class="back-btn" href="/users" sec:authorize="hasAnyAuthority('ADMIN', 'LIBRARIAN')">Back</a>
+
+            <a class="back-btn" href="/" sec:authorize="hasAnyAuthority('MEMBER')">Back</a>
+        </div>
+    </div>
+</body>
+</html>

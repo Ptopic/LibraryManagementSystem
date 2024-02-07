@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Error</title>
+    <th:block th:insert="~{fragments/head :: head}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/access-denied.css}">
+</head>
+<body>
+<div class="error-page">
+    <div class="glitch-wrapper">
+        <div class="glitch">403</div>
+
+        <h2 class="glitch h2">Oops! Looks like you dont have access to this page...</h2>
+        <p>Access denied</p>
+        <button>
+            <a class="btn btn-lg btn-secondary mt-3" th:href="@{/}">Go to homepage</a>
+        </button>
+    </div>
+</div>
+</body>
+</html>

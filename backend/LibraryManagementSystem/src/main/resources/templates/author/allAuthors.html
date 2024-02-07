@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Authors</title>
+    <th:block th:insert="~{fragments/head :: head}"></th:block>
+</head>
+<style>
+    .container-authors {
+        padding: 4rem 12rem;
+    }
+
+    .container-authors h1 {
+        font-size: 2.8rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .authors-stats-filters {
+        display: flex;
+    }
+
+    .total-authors {
+        background-color: var(--bg700);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: .8rem 1.2rem;
+        border-radius: .4rem;
+        border: 1px solid var(--primary500);
+        margin-right: 2rem;
+    }
+
+    @media (max-width: 1400px) {
+        .container-authors {
+            padding: 4rem 4rem;
+        }
+    }
+</style>
+<body>
+    <th:block th:insert="~{fragments/navigation :: navigation}"></th:block>
+    <div class="container-authors">
+        <h1>Authors</h1>
+
+        <div class="authors-stats-filters">
+            <div class="total-authors">
+                <div class="total-icon">
+                    <i class="bi bi-file-earmark"></i>
+                </div>
+                <div class="total-info">
+                    Total authors:
+                    <span th:text="${count}">4</span>
+                </div>
+            </div>
+            <form class="filters" th:action="@{/authors}">
+                <div class="search-input">
+                    <input class="search-input" id="searchQuery" name="searchQuery" placeholder="Search authors" th:value="${searchQuery}" type="search">
+                    <button class="search-btn" type="submit"><i class="bi bi-search"></i></button>
+                </div>
+
+                <div class="filter-container">
+                    <label for="pageSize">Items per page</label>
+                    <select class="form-select" id="pageSize" name="size"
+                            onchange="changeFilters()" th:value="${pageSize}"
+                    >
+                        <option th:selected="${5 == pageSize}" th:text="5" th:value="5"></option>
+                        <option th:selected="${7 == pageSize}" th:text="7" th:value="7"></option>
+                        <option th:selected="${10 == pageSize}" th:text="10" th:value="10"></option>
+                    </select>
+                </div>
+
+                <button class="btn-clear">
+                    Clear filters
+                </button>
+            </form>
+        </div>
+
+        <div class="action-buttons">
+            <a class="btn-add" sec:authorize="hasAnyAuthority('ADMIN', 'LIBRARIAN')" th:href="@{/authors/add}">Add new Author</a>
+        </div>
+
+        <div class="error" th:text="${message}" th:if="${message != null}"></div>
+
+        <div class="table-container">
+            <div class="none-found" th:if="${authors.size() == 0}"><p>No authors found.</p></div>
+            <table class="table" th:if="${authors.size() > 0}">
+                <thead class="table-head">
+                    <tr>
+                        <th class="id-header"># Id</th>
+                        <th>
+                            <a th:href="@{'/authors?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'firstName' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'firstName' ? reverseSortDirection : sortDirection) : ''}}">
+                                First Name
+                                <i class="bi bi-sort-up" th:if="${(sortField == 'firstName' && sortDirection == 'asc') || sortField != 'firstName'}"></i>
+                                <i class="bi bi-sort-down" th:if="${sortField == 'firstName' && sortDirection == 'desc'}"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a th:href="@{'/authors?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'lastName' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'lastName' ? reverseSortDirection : sortDirection) : ''}}">
+                                Last Name
+                                <i class="bi bi-sort-up" th:if="${(sortField == 'lastName' && sortDirection == 'asc') || sortField != 'lastName'}"></i>
+                                <i class="bi bi-sort-down" th:if="${sortField == 'lastName' && sortDirection == 'desc'}"></i>
+                            </a>
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody class="table-content">
+                    <tr th:each="author : ${authors}" class="table-content-row">
+                        <th th:text="${author.id.toString().substring(0,8)+'...'}" class="id"></th>
+                        <td th:text="${author.firstName}"></td>
+                        <td th:text="${author.lastName}"></td>
+                        <td class="actions-row">
+                            <div>
+                                <a class="action-btn" th:href="@{/authors/edit/{authorId}(authorId=${author.id})}"
+                                   title="Edit Author">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                            <div>
+                                <a class="delete-btn"
+                                   role="button"
+                                   th:href="@{/authors/delete/{authorId}(authorId=${author.id})}"
+                                   sec:authorize="hasAnyAuthority('ADMIN')"
+                                   th:authorFirstName="${author.firstName}"
+                                   th:authorLastName="${author.lastName}"
+                                   title="Delete Author"
+                                >
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="pagination-container">
+            <a th:if="${currentPage > 1}" th:href="@{'/authors?' + 'page=' + ${currentPage - 1} + '&size=' + ${pageSize}
+                 + ${sortField != null ? '&sortField=' + sortField : ''} + ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + sortDirection : ''}}" class="previous-btn">Previous</a>
+            <p class="current-page" th:text="${currentPage}"></p>
+            <a th:if="${currentPage < totalPages}" th:href="@{'/authors?' + 'page=' + ${currentPage + 1} + '&size=' + ${pageSize}
+                 + ${sortField != null ? '&sortField=' + sortField : ''} + ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + sortDirection : ''}}" class="next-btn">Next</a>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="deleteModal">
+        <div class="delete-modal">
+            <div class="modal-header">
+                <h1>Confirm Delete</h1>
+            </div>
+            <div class="modal-body">
+                <p><span id="confirmText"></span></p>
+            </div>
+            <div class="modal-footer">
+                <a class="yes-btn submit" id="yesBtn" type="button" onclick="initLoadingSpinner()">Delete Author</a>
+                <button class="no-btn noBtn" data-bs-dismiss="modal" type="button">Close</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script type="text/javascript">
+    const deleteButtons = document.querySelectorAll(".delete-btn");
+    const deleteModal = document.querySelector(".modal-overlay")
+
+    const noBtn = document.querySelector(".no-btn");
+    deleteButtons.forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            let href = btn.getAttribute("href");
+            let authorFirstName = btn.getAttribute("authorFirstName");
+            let authorLastName = btn.getAttribute("authorLastName");
+
+            const confirmText = document.querySelector("#confirmText");
+            confirmText.innerHTML = "Are you sure you want to delete author: \<b\>" + authorFirstName + " " + authorLastName + "\<\/b\>?";
+
+            const yesBtn = document.querySelector(".yes-btn");
+            yesBtn.href = href;
+
+            deleteModal.style.display = "flex";
+        })
+    })
+
+    noBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        deleteModal.style.display = "none";
+    })
+
+    const initLoadingSpinner = () => {
+        const submitBtn = document.querySelector('.submit');
+        submitBtn.innerHTML = '<div class="loader"></div>';
+    }
+
+    const changeFilters = () => {
+        const form = document.querySelector(".filters");
+        form.submit();
+    }
+
+    const bntClear = document.querySelector(".btn-clear");
+    bntClear.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.location = "[[@{/authors}]]";
+    })
+
+    const searchInput = document.querySelector(".search-input");
+    searchInput.addEventListener("search", () => {
+        // Clear all filters when search is cleared
+        const searchQuery = document.querySelector("#searchQuery");
+        searchQuery.value = "";
+        changeFilters();
+    })
+</script>
+</html>

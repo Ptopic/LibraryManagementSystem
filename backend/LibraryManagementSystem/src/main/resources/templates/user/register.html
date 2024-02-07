@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign up page</title>
+    <th:block th:insert="~{fragments/head :: head}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/register.css}">
+</head>
+<body>
+<div class="container-register">
+    <div class="register-left">
+
+    </div>
+
+    <div class="register-right">
+        <div class="register-header">
+            <h3 class="mb-4">Sign up</h3>
+        </div>
+        <form th:action="@{/users/register}" method="POST" class="register-form">
+            <!--Check for errors-->
+            <div th:if="${error}" class="error" th:text="${error}">
+                Invalid username or password.
+            </div>
+            <div class="input-group">
+                <label class="form-control-placeholder">First name</label>
+                <div>
+                    <input type="text" class="form-control" name="firstName" required placeholder="Enter your first name">
+                </div>
+            </div>
+            <div class="input-group">
+                <label class="form-control-placeholder">Last name</label>
+                <div>
+                    <input type="text" class="form-control" name="lastName" required placeholder="Enter your last name">
+                </div>
+            </div>
+            <div class="input-group">
+                <label class="form-control-placeholder">Username</label>
+                <div>
+                    <input type="text" class="form-control" name="username" required placeholder="Enter your desired username">
+                </div>
+            </div>
+            <div class="input-group">
+                <label class="form-control-placeholder">Email</label>
+                <div>
+                    <input type="text" class="form-control" name="email" required placeholder="Enter your E-mail">
+                </div>
+            </div>
+            <div class="input-group">
+                <label class="form-control-placeholder">Password</label>
+                <div class="password">
+                    <input id="password-field" type="password" name="password" class="form-control" required placeholder="Enter your password">
+                    <div class="password-visible-btn" onclick="togglePasswordVisibility()"><i class="bi bi-eye-fill"></i></div>
+                </div>
+            </div>
+            <div class="input-group">
+                <label class="form-control-placeholder">Confirm password</label>
+                <div class="password">
+                    <input id="password-field-confirm" type="password" name="confirmPassword" class="form-control" required placeholder="Confirm your password">
+                    <div class="confirm-password-visible-btn" onclick="toggleConfirmPasswordVisible()"><i class="bi bi-eye-fill"></i></div>
+                </div>
+            </div>
+            <div class="input-group">
+                <label class="form-control-placeholder">Contact number</label>
+                <div>
+                    <input type="number" class="form-control" name="contactNumber" required placeholder="Enter your phone mumber">
+                </div>
+            </div>
+            <div class="input-group">
+                <label class="form-control-placeholder">Date of birth</label>
+                <div>
+                    <input type="date" class="form-control" name="dateOfBirth" required>
+                </div>
+            </div>
+            <div class="register-button-container">
+                <button type="submit" class="register-btn submit" onclick="initLoadingSpinner()">Sign up</button>
+                <p class="text-center">Already have an account? <a th:href="@{/users/login}">Log In</a></p>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+<script>
+    const togglePasswordVisibility = () => {
+        var passwordField = document.getElementById('password-field');
+        var passwordVisibleBtn = document.querySelector('.password-visible-btn');
+
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            passwordVisibleBtn.innerHTML = '<i class="bi bi-eye-slash-fill"></i>';
+        } else {
+            passwordField.type = 'password';
+            passwordVisibleBtn.innerHTML = '<i class="bi bi-eye-fill"></i>';
+        }
+    }
+
+    const toggleConfirmPasswordVisible = () => {
+        var passwordField = document.getElementById('password-field-confirm');
+        var passwordVisibleBtn = document.querySelector('.confirm-password-visible-btn');
+
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            passwordVisibleBtn.innerHTML = '<i class="bi bi-eye-slash-fill"></i>';
+        } else {
+            passwordField.type = 'password';
+            passwordVisibleBtn.innerHTML = '<i class="bi bi-eye-fill"></i>';
+        }
+    }
+
+    const initLoadingSpinner = () => {
+        const firstName = document.querySelector('input[name="firstName"]').value;
+        const lastName = document.querySelector('input[name="lastName"]').value;
+        const username = document.querySelector('input[name="username"]').value;
+        const email = document.querySelector('input[name="email"]').value;
+        const contactNumber = document.querySelector('input[name="contactNumber"]').value;
+        const dateOfBirth = document.querySelector('input[name="dateOfBirth"]').value;
+        const password = document.querySelector('input[name="password"]').value;
+        const confirmPassword = document.querySelector('input[name="confirmPassword"]').value;
+
+        const submitBtn = document.querySelector('.submit');
+
+        if(firstName === '' || lastName === '' || username === '' || email === '' || contactNumber === '' || dateOfBirth === '' || password === '' || confirmPassword === '') {
+            alert('Please fill in all the fields');
+        } else {
+            submitBtn.innerHTML = '<div class="loader"></div>';
+        }
+    }
+</script>
+</html>

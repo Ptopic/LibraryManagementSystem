@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Books Information</title>
+    <th:block th:insert="~{fragments/head :: head}"></th:block>
+</head>
+<style>
+    .container-bookInfos {
+        padding: 4rem 12rem;
+    }
+
+    .container-bookInfos h1 {
+        font-size: 2.8rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .bookInfos-stats-filters {
+        display: flex;
+    }
+
+    .total-bookInfos {
+        background-color: var(--bg700);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: .8rem 1.2rem;
+        border-radius: .4rem;
+        border: 1px solid var(--primary500);
+        margin-right: 2rem;
+    }
+
+    @media (max-width: 1400px) {
+        .container-bookInfos {
+            padding: 4rem 4rem;
+        }
+
+        .actions-row {
+            width: 200px;
+        }
+    }
+</style>
+<body>
+    <th:block th:insert="~{fragments/navigation :: navigation}"></th:block>
+    <div class="container-bookInfos">
+        <h1>Books Information</h1>
+
+        <div class="bookInfos-stats-filters">
+            <div class="total-bookInfos">
+                <div class="total-icon">
+                    <i class="bi bi-file-earmark"></i>
+                </div>
+                <div class="total-info">
+                    Total Books Information:
+                    <span th:text="${count}"></span>
+                </div>
+            </div>
+            <form class="filters" th:action="@{/bookInfos}">
+                <div class="search-input">
+                    <input class="search-input" name="searchQuery" id="searchQuery" placeholder="Search books information" th:value="${searchQuery}" type="search">
+                    <button><i class="bi bi-search"></i></button>
+                </div>
+
+                <div class="filter-container">
+                    <label for="pageSize">Items per page</label>
+                    <select class="form-select" id="pageSize" name="size"
+                            onchange="changeFilters()" th:value="${pageSize}"
+                    >
+                        <option th:selected="${5 == pageSize}" th:text="5" th:value="5"></option>
+                        <option th:selected="${7 == pageSize}" th:text="7" th:value="7"></option>
+                        <option th:selected="${10 == pageSize}" th:text="10" th:value="10"></option>
+                    </select>
+                </div>
+                <div class="filter-container">
+                    <label for="pageSize">Filter by categories</label>
+                    <select class="form-select" id="categoryName" name="categoryName"
+                            onchange="changeFilters()" th:value="${categoryName}"
+                    >
+                        <option disabled selected>All categories</option>
+                        <option th:each="category: ${categoryOptions}"
+                                th:selected="${category.name == categoryName}"
+                                th:text="${category.name}"
+                                th:value="${category.name}"
+                        ></option>
+                    </select>
+                </div>
+
+                <button class="btn-clear">
+                    Clear filters
+                </button>
+            </form>
+        </div>
+
+        <div class="action-buttons">
+            <a class="btn-add" sec:authorize="hasAnyAuthority('ADMIN', 'LIBRARIAN')" th:href="@{/bookInfos/add}">Add new Book Information</a>
+        </div>
+
+        <div class="error" th:text="${message}" th:if="${message != null}"></div>
+
+        <div class="table-container">
+            <div class="none-found" th:if="${bookInfos.size() == 0}"><p>No books information found.</p></div>
+            <table class="table" th:if="${bookInfos.size() > 0}">
+                <thead class="table-head">
+                    <tr>
+                        <th class="id-header"># Id</th>
+                        <th>
+                            <a th:href="@{'/bookInfos?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'title' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'title' ? reverseSortDirection : sortDirection) : ''}}">
+                                Title
+                                <i class="bi bi-sort-up" th:if="${(sortField == 'title' && sortDirection == 'asc') || sortField != 'title'}"></i>
+                                <i class="bi bi-sort-down" th:if="${sortField == 'title' && sortDirection == 'desc'}"></i>
+                            </a>
+                        </th>
+                        <th>Description</th>
+                        <th>
+                            <a th:href="@{'/bookInfos?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'authors' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'authors' ? reverseSortDirection : sortDirection) : ''}}">
+                                Authors
+                                <i class="bi bi-sort-up" th:if="${(sortField == 'authors' && sortDirection == 'asc') || sortField != 'authors'}"></i>
+                                <i class="bi bi-sort-down" th:if="${sortField == 'authors' && sortDirection == 'desc'}"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a th:href="@{'/bookInfos?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'categories' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'categories' ? reverseSortDirection : sortDirection) : ''}}">
+                                Categories
+                                <i class="bi bi-sort-up" th:if="${(sortField == 'categories' && sortDirection == 'asc') || sortField != 'categories'}"></i>
+                                <i class="bi bi-sort-down" th:if="${sortField == 'categories' && sortDirection == 'desc'}"></i>
+                            </a>
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody class="table-content">
+                    <tr th:each="bookInfo : ${bookInfos}" class="table-content-row">
+                        <th th:text="${bookInfo.id.toString().substring(0,8)+'...'}" class="id"></th>
+                        <td th:text="${bookInfo.title}"></td>
+                        <td th:text="${bookInfo.description}"></td>
+                        <td>
+                            <span th:each="author : ${bookInfo.authors}" th:utext="${author.firstName + ' ' + author.lastName + '<br/>'}"></span>
+                        </td>
+                        <td>
+                            <span th:each="category : ${bookInfo.categories}" th:utext="${category.name + '<br/>'}"></span>
+                        </td>
+                        <td class="actions-row">
+                            <div>
+                                <a class="action-btn" th:href="@{/books/{bookInfoId}/bookInfo(bookInfoId=${bookInfo.id})}"
+                                   title="View Books">
+                                    <i class="bi bi-book"></i>
+                                </a>
+                            </div>
+                            <div>
+                                <a class="action-btn" th:href="@{/bookInfos/edit/{bookInfoId}(bookInfoId=${bookInfo.id})}"
+                                   title="Edit Author">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                            <div>
+                                <a class="delete-btn"
+                                   role="button"
+                                   th:href="@{/bookInfos/delete/{bookInfoId}(bookInfoId=${bookInfo.id})}"
+                                   sec:authorize="hasAnyAuthority('ADMIN')"
+                                   th:bookInfoTitle="${bookInfo.title}"
+                                   title="Delete Book Info"
+                                >
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination-container">
+            <a th:if="${currentPage > 1}" th:href="@{'/bookInfos?' + 'page=' + ${currentPage - 1} + '&size=' + ${pageSize}
+                 + ${sortField != null ? '&sortField=' + sortField : ''} + ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + sortDirection : ''}}" class="previous-btn">Previous</a>
+            <p class="current-page" th:text="${currentPage}"></p>
+            <a th:if="${currentPage < totalPages}" th:href="@{'/bookInfos?' + 'page=' + ${currentPage + 1} + '&size=' + ${pageSize}
+                 + ${sortField != null ? '&sortField=' + sortField : ''} + ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + sortDirection : ''}}" class="next-btn">Next</a>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="deleteModal">
+        <div class="delete-modal">
+            <div class="modal-header">
+                <h1>Confirm Delete</h1>
+            </div>
+            <div class="modal-body">
+                <p><span id="confirmText"></span></p>
+            </div>
+            <div class="modal-footer">
+                <a class="yes-btn submit" id="yesBtn" type="button" onclick="initLoadingSpinner()">Delete Book Information</a>
+                <button class="no-btn noBtn" data-bs-dismiss="modal" type="button">Close</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script type="text/javascript">
+    const deleteButtons = document.querySelectorAll(".delete-btn");
+    const deleteModal = document.querySelector(".modal-overlay")
+
+    const noBtn = document.querySelector(".no-btn");
+    deleteButtons.forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            let href = btn.getAttribute("href");
+            let bookInfoTitle = btn.getAttribute("bookInfoTitle");
+
+            const confirmText = document.querySelector("#confirmText");
+            confirmText.innerHTML = "Are you sure you want to delete book information: \<b\>" + bookInfoTitle + "\<\/b\>?";
+
+            const yesBtn = document.querySelector(".yes-btn");
+            yesBtn.href = href;
+
+            deleteModal.style.display = "flex";
+        })
+    })
+
+    noBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        deleteModal.style.display = "none";
+    })
+
+    const initLoadingSpinner = () => {
+        const submitBtn = document.querySelector('.submit');
+        submitBtn.innerHTML = '<div class="loader"></div>';
+    }
+
+    const changeFilters = () => {
+        const form = document.querySelector(".filters");
+        form.submit();
+    }
+
+    const bntClear = document.querySelector(".btn-clear");
+    bntClear.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.location = "[[@{/bookInfos}]]";
+    })
+
+    const searchInput = document.querySelector(".search-input");
+    searchInput.addEventListener("search", () => {
+        // Clear all filters when search is cleared
+        const searchQuery = document.querySelector("#searchQuery");
+        searchQuery.value = "";
+        changeFilters();
+    })
+</script>
+</html>

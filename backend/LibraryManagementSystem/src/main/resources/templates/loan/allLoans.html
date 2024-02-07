@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>All Loans</title>
+    <th:block th:insert="~{fragments/head :: head}"></th:block>
+</head>
+<style>
+    .container-loans {
+        padding: 4rem 12rem;
+    }
+
+    .container-loans h1 {
+        font-size: 4.2rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .container-loans h2 {
+        font-size: 2.4rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .loans-stats-filters {
+        display: flex;
+        margin-bottom: 2rem;
+    }
+
+    .total-loans {
+        background-color: var(--bg700);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: .8rem 1.2rem;
+        border-radius: .4rem;
+        border: 1px solid var(--primary500);
+        margin-right: 2rem;
+    }
+
+    .action-btn {
+        background-color: var(--bg800);
+        border-radius: .4rem;
+        padding: 1rem;
+        text-align: center;
+        color: black;
+        border: 1px solid black;
+        box-sizing: border-box;
+        text-decoration: none;
+    }
+
+    .action-btn > i {
+        color: black;
+    }
+
+    .delete-btn {
+        background-color: var(--error-bg);
+        border-radius: .4rem;
+        padding: 1rem;
+        text-align: center;
+        color: var(--error-text);
+        border: 1px solid var(--error-text);
+        text-decoration: none;
+    }
+
+    .delete-btn > i {
+        color: var(--error-text);
+    }
+
+    .loans-row div>a {
+        margin-right: 1rem;
+        text-decoration: none;
+    }
+
+    .back-btn-container {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: start;
+        margin-top: 2rem;
+    }
+
+    .back-btn {
+        font-size: 1.6rem;
+        text-decoration: none;
+        border-radius: .4rem;
+        padding: 1rem 1.6rem;
+        border: 0.4px solid black;
+        color: black;
+    }
+
+    .back-btn:hover {
+        cursor: pointer;
+    }
+
+    .pagination-container {
+        display: flex;
+        margin-top: 2rem;
+    }
+</style>
+<body>
+<th:block th:insert="~{fragments/navigation :: navigation}"></th:block>
+<div class="container-loans">
+    <h1 th:if="${loanType == 'all' || loanType == null}">Loans</h1>
+    <h1 th:if="${loanType == 'myLoans'}">My Loans</h1>
+    <h1 th:if="${loanType == 'previous'}">Previous Loans</h1>
+    <h1 th:if="${loanType == 'current'}">Current Loans</h1>
+    <h1 th:if="${loanType == 'bookLoans'}">Book Loans</h1>
+
+    <h2 th:if="${member != null && loanType != 'myLoans'}" th:text="${'For member: ' + member.firstName + ' ' + member.lastName + ' (' + member.email + ') '}"></h2>
+
+    <h2 th:if="${book != null}" th:text="${'For book: ' + book.bookInfo.title + ' (' + book.isbn + ') '}"></h2>
+
+    <div class="loans-stats-filters">
+        <div class="total-loans">
+            <div class="total-icon">
+                <i class="bi bi-file-earmark"></i>
+            </div>
+            <div class="total-info">
+                Total loans:
+                <span th:text="${count}">4</span>
+            </div>
+        </div>
+        <form class="filters">
+            <div class="filter-container">
+                <label for="pageSize">Items per page</label>
+                <select class="form-select" id="pageSize" name="size"
+                        onchange="changeFilters()" th:value="${pageSize}"
+                >
+                    <option th:selected="${5 == pageSize}" th:text="5" th:value="5"></option>
+                    <option th:selected="${7 == pageSize}" th:text="7" th:value="7"></option>
+                    <option th:selected="${10 == pageSize}" th:text="10" th:value="10"></option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-container">
+        <div class="none-found" th:if="${loans.size() == 0}"><p>No loans found.</p></div>
+        <div class="error" th:text="${message}" th:if="${message != null}"></div>
+        <table class="table" th:if="${loans.size() > 0}">
+            <thead class="table-head">
+            <tr>
+                <th class="id-header"># Id</th>
+                <th th:if="${member == null && book == null}">
+                    <a th:href="@{'/loans?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'member' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'member' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Member
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'member' && sortDirection == 'asc') || sortField != 'member'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'member' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+                <th th:if="${book != null}">
+                    <a th:href="@{'/loans/book/' + ${book.id} + '?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'member' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'member' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Member
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'member' && sortDirection == 'asc') || sortField != 'member'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'member' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+                <th th:if="${book == null && loanType != 'all' && loanType != 'myLoans'}">Member</th>
+
+                <th th:if="${member == null && book == null}">
+                    <a th:href="@{'/loans?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'librarian' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'librarian' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Librarian
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'librarian' && sortDirection == 'asc') || sortField != 'librarian'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'librarian' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+                <th th:if="${member == null && book == null && loanType == 'myLoans'}">
+                    <a th:href="@{'/loans?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'librarian' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'librarian' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Librarian
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'librarian' && sortDirection == 'asc') || sortField != 'librarian'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'librarian' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+                <th th:if="${member != null}">
+                    <a th:href="@{'/loans/' + ${member.id} + '/' + ${loanType} + '?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'librarian' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'librarian' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Librarian
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'librarian' && sortDirection == 'asc') || sortField != 'librarian'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'librarian' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+                <th th:if="${book != null}">
+                    <a th:href="@{'/loans/book/' + ${book.id} + '?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'librarian' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'librarian' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Librarian
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'librarian' && sortDirection == 'asc') || sortField != 'librarian'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'librarian' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+
+                <th th:if="${member == null && book == null}">
+                    <a th:href="@{'/loans?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'dateIssued' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'dateIssued' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Date Issued
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'dateIssued' && sortDirection == 'asc') || sortField != 'dateIssued'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'dateIssued' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+                <th th:if="${member == null && book == null && loanType == 'myLoans'}">
+                    <a th:href="@{'/loans?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'dateIssued' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'dateIssued' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Date Issued
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'dateIssued' && sortDirection == 'asc') || sortField != 'dateIssued'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'dateIssued' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+                <th th:if="${member != null}">
+                    <a th:href="@{'/loans/' + ${member.id} + '/' + ${loanType} + '?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'dateIssued' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'dateIssued' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Date Issued
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'dateIssued' && sortDirection == 'asc') || sortField != 'dateIssued'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'dateIssued' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+                <th th:if="${book != null}">
+                    <a th:href="@{'/loans/book/' + ${book.id} + '?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'dateIssued' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'dateIssued' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Date Issued
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'dateIssued' && sortDirection == 'asc') || sortField != 'dateIssued'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'dateIssued' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+
+                <th th:if="${member == null && book == null}">
+                    <a th:href="@{'/loans?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'dateReturned' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'dateReturned' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Date Returned
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'dateReturned' && sortDirection == 'asc') || sortField != 'dateReturned'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'dateReturned' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+                <th th:if="${member == null && book == null && loanType == 'myLoans'}">
+                    <a th:href="@{'/loans?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'dateReturned' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'dateReturned' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Date Returned
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'dateReturned' && sortDirection == 'asc') || sortField != 'dateReturned'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'dateReturned' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+                <th th:if="${member != null}">
+                    <a th:href="@{'/loans/' + ${member.id} + '/' + ${loanType} + '?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'dateReturned' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'dateReturned' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Date Returned
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'dateReturned' && sortDirection == 'asc') || sortField != 'dateReturned'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'dateReturned' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+                <th th:if="${book != null}">
+                    <a th:href="@{'/loans/book/' + ${book.id} + '?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'dateReturned' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'dateReturned' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Date Returned
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'dateReturned' && sortDirection == 'asc') || sortField != 'dateReturned'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'dateReturned' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+
+                <th th:if="${member == null && book == null}">
+                    <a th:href="@{'/loans?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'book' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'book' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Book
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'book' && sortDirection == 'asc') || sortField != 'book'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'book' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+                <th th:if="${member == null && book == null && loanType == 'myLoans'}">
+                    <a th:href="@{'/loans?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'book' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'book' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Book
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'book' && sortDirection == 'asc') || sortField != 'book'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'book' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+                <th th:if="${member != null}">
+                    <a th:href="@{'/loans/' + ${member.id} + '/' + ${loanType} + '?' + 'page=' + ${currentPage}
+                                        + '&size=' + ${pageSize}
+                                        + ${sortField != null ? '&sortField=' + 'book' : ''} +
+                                        ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + (sortField == 'book' ? reverseSortDirection : sortDirection) : ''}}"
+                    >
+                        Book
+                        <i class="bi bi-sort-up" th:if="${(sortField == 'book' && sortDirection == 'asc') || sortField != 'book'}"></i>
+                        <i class="bi bi-sort-down" th:if="${sortField == 'book' && sortDirection == 'desc'}"></i>
+                    </a>
+                </th>
+                <th th:if="${book != null}">
+                    Book
+                </th>
+
+                <th sec:authorize="hasAnyAuthority('ADMIN', 'LIBRARIAN')">Actions</th>
+            </tr>
+            </thead>
+
+            <tbody class="table-content">
+            <tr th:each="loan, i: ${loans}" class="table-content-row">
+                <th th:text="${loan.id.toString().substring(0,8)+'...'}" class="id"></th>
+                <td th:text="${loan.member.firstName + ' ' + loan.member.lastName}" th:if="${loanType != 'myLoans'}"></td>
+                <td th:text="${loan.librarian.firstName + ' ' + loan.librarian.lastName}"></td>
+                <td th:text="${issuedDates.get(i.index)}"></td>
+                <td>
+                    <span th:if="${loan.dateReturned != null}" th:text="${returnedDates.get(i.index)}"></span>
+                    <span th:unless="${loan.dateReturned != null}">Currently, in loan</span>
+                </td>
+                <td th:text="${loan.book.bookInfo.title}"></td>
+                <td class="actions-row" sec:authorize="hasAnyAuthority('ADMIN', 'LIBRARIAN')">
+                    <div>
+                        <a class="action-btn" th:href="@{/loans/{memberId}/current(memberId=${loan.member.id})}"
+                           title="Current Loans">
+                            Current Loans
+                        </a>
+                    </div>
+                    <div>
+                        <a class="action-btn" th:href="@{/loans/{memberId}/previous(memberId=${loan.member.id})}"
+                           title="Previous Loans">
+                            Previous Loans
+                        </a>
+                    </div>
+
+                    <div>
+                        <a class="delete-btn"
+                           role="button"
+                           th:href="@{/loans/{loanId}/end(loanId=${loan.id})}"
+                           th:if="${loan.dateReturned == null}"
+                           th:bookTitle="${loan.book.bookInfo.title}"
+                           th:member="${loan.member.firstName + ' ' + loan.member.lastName}"
+                           title="End loan"
+                        >
+                            End Loan
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div class="pagination-container">
+            <div th:if="${currentPage > 1}" class="previous-btns-container">
+                <a class="previous-btn"
+                   th:href="@{'/loans?' + 'page=' + ${currentPage - 1} + '&size=' + ${pageSize}
+                 + ${sortField != null ? '&sortField=' + sortField : ''} +
+                 ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + sortDirection : ''}}"
+                   th:if="${member == null && book == null}"
+                >
+                    Previous
+                </a>
+
+                <a class="previous-btn"
+                   th:href="@{'/loans?' + 'page=' + ${currentPage - 1} + '&size=' + ${pageSize}
+                 + ${sortField != null ? '&sortField=' + sortField : ''} +
+                 ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + sortDirection : ''}}"
+                   th:if="${member == null && book == null && loanType == 'myLoans'}"
+                >
+                    Previous
+                </a>
+
+                <a class="previous-btn"
+                   th:href="@{'/loans/' + ${member.id} + '/' + ${loanType} + '?' + 'page=' + ${currentPage - 1} + '&size=' + ${pageSize}
+                 + ${sortField != null ? '&sortField=' + sortField : ''} +
+                 ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + sortDirection : ''}}"
+                   th:if="${member != null}"
+                >
+                    Previous
+                </a>
+
+                <a class="previous-btn"
+                   th:href="@{'/loans/book/' + ${book.id} + '?' + 'page=' + ${currentPage - 1} + '&size=' + ${pageSize}
+                 + ${sortField != null ? '&sortField=' + sortField : ''} +
+                 ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + sortDirection : ''}}"
+                   th:if="${book != null}"
+                >
+                    Previous
+                </a>
+            </div>
+
+            <p class="current-page" th:text="${currentPage}"></p>
+
+            <div th:if="${currentPage < totalPages}" class="next-btns-container">
+                <a class="next-btn"
+                   th:href="@{'/loans?' + 'page=' + ${currentPage + 1} + '&size=' + ${pageSize}
+                 + ${sortField != null ? '&sortField=' + sortField : ''} +
+                 ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + sortDirection : ''}}"
+                   th:if="${member == null && book == null}"
+                >
+                    Next
+                </a>
+
+                <a class="next-btn"
+                   th:href="@{'/loans?' + 'page=' + ${currentPage + 1} + '&size=' + ${pageSize}
+                 + ${sortField != null ? '&sortField=' + sortField : ''} +
+                 ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + sortDirection : ''}}"
+                   th:if="${member == null && book == null && loanType == 'myLoans'}"
+                >
+                    Next
+                </a>
+
+                <a class="next-btn"
+                   th:href="@{'/loans/' + ${member.id} + '/' + ${loanType} + '?' + 'page=' + ${currentPage + 1} + '&size=' + ${pageSize}
+                 + ${sortField != null ? '&sortField=' + sortField : ''} +
+                 ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + sortDirection : ''}}"
+                   th:if="${member != null}"
+                >
+                    Next
+                </a>
+
+                <a class="next-btn"
+                   th:href="@{'/loans/book/' + ${book.id} + '?' + 'page=' + ${currentPage + 1} + '&size=' + ${pageSize}
+                 + ${sortField != null ? '&sortField=' + sortField : ''} +
+                 ${sortDirection != null && sortDirection != '' ? '&sortDirection=' + sortDirection : ''}}"
+                   th:if="${book != null}"
+                >
+                    Next
+                </a>
+            </div>
+        </div>
+
+        <!--Back button if loan type is different than all-->
+        <div class="back-btn-container">
+            <a class="back-btn" th:if="${loanType != 'all' && loanType != 'myLoans'}" onclick="history.back()">Back</a>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="deleteModal">
+    <div class="delete-modal">
+        <div class="modal-header">
+            <h1>Confirm End Loan</h1>
+        </div>
+        <div class="modal-body">
+            <p><span id="confirmText"></span></p>
+        </div>
+        <div class="modal-footer">
+            <a class="yes-btn submit" id="yesBtn" type="button" onclick="initLoadingSpinner()">End Loan</a>
+            <button class="no-btn noBtn" data-bs-dismiss="modal" type="button">Close</button>
+        </div>
+    </div>
+</div>
+</body>
+
+<script type="text/javascript">
+    const deleteButtons = document.querySelectorAll(".delete-btn");
+    const deleteModal = document.querySelector(".modal-overlay")
+
+    const noBtn = document.querySelector(".no-btn");
+    deleteButtons.forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            let href = btn.getAttribute("href");
+            let bookTitle = btn.getAttribute("bookTitle");
+            let member = btn.getAttribute("member");
+
+            const confirmText = document.querySelector("#confirmText");
+            confirmText.innerHTML = "Are you sure you want to end loan for book: \<b\>" + bookTitle + "\<\/b\>" + "\<br>" + " made by member: \<b\>" + member + "\<\/b\>?";
+
+            const yesBtn = document.querySelector(".yes-btn");
+            yesBtn.href = href;
+
+            deleteModal.style.display = "flex";
+        })
+    })
+
+    noBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        deleteModal.style.display = "none";
+    })
+
+    const initLoadingSpinner = () => {
+        const submitBtn = document.querySelector('.submit');
+        submitBtn.innerHTML = '<div class="loader"></div>';
+    }
+
+    const changeFilters = () => {
+        const form = document.querySelector(".filters");
+        form.submit();
+    }
+
+</script>
+</html>

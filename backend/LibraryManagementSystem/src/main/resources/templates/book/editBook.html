@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Book</title>
+    <th:block th:insert="~{fragments/head :: head}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/forms.css}">
+</head>
+<style>
+    .add-book-container {
+        padding: 4rem var(--padding-container);
+    }
+
+    .add-book-container h1 {
+        font-size: 2.8rem;
+        margin-bottom: 2rem;
+    }
+
+    .add-book-form {
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+</style>
+<body>
+<th:block th:insert="~{fragments/navigation :: navigation}"></th:block>
+
+<div class="add-book-container">
+    <h1>Edit Book</h1>
+
+    <form class="add-book-form" method="POST" th:action="@{/books/updateBook(${_csrf.parameterName}=${_csrf.token})}" enctype="multipart/form-data">
+        <input name="id" th:value="${book.id}" type="hidden">
+        <div class="input-group">
+            <label>Book Information</label>
+            <select class="form-select" name="bookInfo" id="bookInfo">
+                <option
+                        th:each="bookInfo: ${bookInfoOptions}"
+                        th:text="${bookInfo.title}" th:value="${bookInfo.id}"
+                        th:selected="${bookInfo.title == book.getBookInfo().getTitle()}"
+                ></option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>Book Status</label>
+            <select class="form-select" name="bookStatus" id="bookStatus">
+                <option
+                        th:each="bookStatus: ${bookStatusOptions}"
+                        th:text="${bookStatus.toString()}" th:value="${bookStatus.toString()}"
+                        th:selected="${bookStatus.toString() == book.getBookStatus().toString()}"
+                ></option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>Is it Available</label>
+            <select class="form-select" name="available" id="available">
+                <option
+                        th:text="Yes" th:value="${true}" th:selected="${book.available == true}"
+                ></option>
+                <option
+                        th:text="No" th:value="${false}" th:selected="${book.available == false}"
+                ></option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>Publisher Name</label>
+            <input class="form-control" name="publisherName" required type="text" placeholder="Enter Publisher Name *" th:value="${book.publisherName}">
+        </div>
+
+        <div class="input-group">
+            <label>Date Of Publishing</label>
+            <input class="form-control" name="dateOfPublishing" required type="date" th:value="${dateOfPublishing}">
+        </div>
+
+        <div class="input-group">
+            <label>ISBN</label>
+            <input class="form-control" name="isbn" required type="text" placeholder="Enter ISBN *" th:value="${book.isbn}">
+        </div>
+
+        <div class="input-group">
+            <label>Image Url</label>
+            <input class="form-control" name="image" type="text" placeholder="Enter Image Url" th:value="${book.getImage()}">
+        </div>
+
+        <div class="input-group-upload-container">
+            <div class="input-group upload">
+                <label>Image Upload</label>
+                <div class="error" th:text="${fileUploadMessage}" th:if="${fileUploadMessage != null}"></div>
+                <p class="limit">Limit: 50MB</p>
+                <input id="input-file" type="file" name="file" accept="image/png, image/jpeg"/>
+            </div>
+
+            <div class="upload-delete" th:if="${curFile}">
+                <a class="delete-btn"
+                   role="button"
+                   th:href="@{/books/file/delete/{bookId}(bookId=${book.id})}"
+                   th:title="${book.getBookInfo().getTitle()}"
+                   sec:authorize="hasAnyAuthority('ADMIN')"
+                   title="Delete Book Image"
+                >
+                    Delete Image File
+                    <i class="bi bi-trash"></i>
+                </a>
+            </div>
+        </div>
+
+        <input type="hidden"
+               name="${_csrf.parameterName}"
+               value="${_csrf.token}"/>
+
+        <button class="form-submit submit" type="submit" onclick="initLoadingSpinner()">Edit Book</button>
+    </form>
+    <a class="back-btn" th:href="@{'/books'}">Back</a>
+</div>
+<div class="modal-overlay" id="deleteModal">
+    <div class="delete-modal">
+        <div class="modal-header">
+            <h1>Confirm Delete</h1>
+        </div>
+        <div class="modal-body">
+            <p><span id="confirmText"></span></p>
+        </div>
+        <div class="modal-footer">
+            <a class="yes-btn submit" id="yesBtn" type="button" onclick="initLoadingSpinner()">Delete Image File</a>
+            <button class="no-btn noBtn" data-bs-dismiss="modal" type="button">Close</button>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    const deleteButtons = document.querySelectorAll(".delete-btn");
+    const deleteModal = document.querySelector(".modal-overlay")
+
+    const noBtn = document.querySelector(".no-btn");
+
+    deleteButtons.forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            let href = btn.getAttribute("href");
+            let title = btn.getAttribute("title");
+
+            const confirmText = document.querySelector("#confirmText");
+            confirmText.innerHTML = "Are you sure you want to delete image file for book: \<b\>" + title + "\<\/b\>?";
+
+            const yesBtn = document.querySelector(".yes-btn");
+            yesBtn.href = href;
+
+            deleteModal.style.display = "flex";
+        })
+    })
+
+    noBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        deleteModal.style.display = "none";
+    })
+
+    const initLoadingSpinner = () => {
+        const bookInfo = document.querySelector('input[name="bookInfo"]').value;
+        const bookStatus = document.querySelector('input[name="bookStatus"]').value;
+        const available = document.querySelector('input[name="available"]').value;
+        const publisherName = document.querySelector('input[name="publisherName"]').value;
+        const dateOfPublishing = document.querySelector('input[name="dateOfPublishing"]').value;
+        const isbn = document.querySelector('input[name="isbn"]').value;
+
+        const submitBtn = document.querySelector('.submit');
+
+        if(bookInfo === '' || bookStatus === '' || available === '' || publisherName === '' || dateOfPublishing === '' || isbn === '') {
+            alert('Please fill in all the fields');
+        } else {
+            submitBtn.innerHTML = '<div class="loader"></div>';
+        }
+    }
+</script>
+</html>

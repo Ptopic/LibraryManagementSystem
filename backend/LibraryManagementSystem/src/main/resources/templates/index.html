@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Library management system</title>
+    <th:block th:insert="~{fragments/head :: head}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+</head>
+<body>
+    <th:block th:insert="~{fragments/navigation :: navigation}"></th:block>
+        <div class="container-home">
+            <div class="home-left">
+                <h1>Library Management System</h1>
+                <p>
+                    Library Management System is a web application that manages the library.
+                    <br/>
+                    It allows for users to borrow books and view their loans.
+                    <br/>
+                    And for library admins and librarians to manage library data.
+                </p>
+            </div>
+            <div class="home-right">
+                <img th:src="@{/images/library.jpg}" alt="">
+            </div>
+        </div>
+</body>
+</html>

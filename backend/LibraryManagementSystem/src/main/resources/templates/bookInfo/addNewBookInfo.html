@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Add new Book Information</title>
+    <th:block th:insert="~{fragments/head :: head}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/forms.css}">
+</head>
+<style>
+    .add-bookInfo-container {
+        padding: 4rem var(--padding-container);
+    }
+
+    .add-bookInfo-container h1 {
+        font-size: 2.8rem;
+        margin-bottom: 2rem;
+    }
+
+    .add-bookInfo-form {
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+</style>
+<body>
+    <th:block th:insert="~{fragments/navigation :: navigation}"></th:block>
+
+    <div class="add-bookInfo-container">
+        <h1>Add new Book Information</h1>
+
+        <form class="add-bookInfo-form" method="POST" th:action="@{/bookInfos/saveBookInfo}">
+            <div class="input-group">
+                <label>Title</label>
+                <input class="form-control" name="title" required type="text" placeholder="Enter title *">
+            </div>
+
+            <div class="input-group">
+                <label>Description</label>
+                <input class="form-control" name="description" required type="text" placeholder="Enter description *">
+            </div>
+
+            <div class="input-group">
+                <label>Authors</label>
+                <p>Select none, one or multiple options</p>
+                <select class="form-select" name="authors" id="authors" multiple>
+                    <option
+                        th:each="author: ${authorOptions}"
+                        th:text="${author.firstName + ' ' + author.lastName}" th:value="${author.id}"
+                    ></option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Categories</label>
+                <p>Select none, one or multiple options</p>
+                <select class="form-select" name="categories" id="categories" multiple>
+                    <option
+                        th:each="category: ${categoryOptions}"
+                        th:text="${category.name}" th:value="${category.id}"
+                    ></option>
+                </select>
+            </div>
+            <button class="form-submit submit" type="submit" onclick="initLoadingSpinner()">Add Book Information</button>
+        </form>
+        <a class="back-btn" th:href="@{'/bookInfos'}">Back</a>
+    </div>
+</body>
+<script>
+    new MultiSelectTag('authors', {
+        rounded: true,
+        shadow: true,
+        placeholder: 'Search',
+        tagColor: {
+            textColor: '#0069B4',
+            borderColor: '#0069B4',
+            bgColor: '#8DCEFC',
+            fontSize: 2
+        }
+    })
+
+    new MultiSelectTag('categories', {
+        rounded: true,
+        shadow: true,
+        placeholder: 'Search',
+        tagColor: {
+            textColor: '#0069B4',
+            borderColor: '#0069B4',
+            bgColor: '#8DCEFC',
+            fontSize: 2
+        }
+    })
+
+    const initLoadingSpinner = () => {
+        const title = document.querySelector('input[name="title"]').value;
+        const description = document.querySelector('input[name="description"]').value;
+
+        const submitBtn = document.querySelector('.submit');
+
+        if(title === '' || description === '') {
+            alert('Please fill in all the fields');
+        } else {
+            submitBtn.innerHTML = '<div class="loader"></div>';
+        }
+    }
+</script>
+</html>
